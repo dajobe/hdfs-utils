@@ -92,7 +92,7 @@ class HadoopFsMetadata(object):
             self.perms = fields[9]
             self.username = fields[10]
             self.groupname = fields[11]
-            if self.numBlocks < 0:
+            if self.numBlocks < 0 or self.replication == 0:
                 self.htype = 'dir'
         except Exception, e:
             logger.error("Failed to process line %s - %s" % (line, str(e)))
