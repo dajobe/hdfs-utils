@@ -16,7 +16,6 @@ import argparse
 import logging
 import subprocess
 import sys
-import dateutil.parser
 from datetime import datetime
 from datetime import timedelta
 
@@ -41,8 +40,10 @@ def as_time(val):
     if val == '' or val == "1970-01-01 00:00":
         return None
     try:
-        d = dateutil.parser.parse(val)
-        val = d
+        (dt_str, time_str) = val.split(' ')
+        (year, mon, day) = map(int, dt_str.split('-'))
+        (hrs, mins) = map(int, time_str.split(':'))
+        val = datetime(year, mon, day, hrs, mins)
     except ValueError, e:
         logger.debug("Invalid date '%s' - %s", val, str(e))
         val = None
