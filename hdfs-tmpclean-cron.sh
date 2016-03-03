@@ -12,8 +12,10 @@ LOG_DIR=/var/log/hdfs-tmpclean
 MAX_LOG_DAYS=30
 
 # Hadoop V2
+HDFS_FS_COMMAND="hdfs fs"
 HDFS_OIV_COMMAND="hdfs oiv"
 # Hadoop V1
+# HDFS_FS_COMMAND="hadoop fs"
 # HDFS_OIV_COMMAND="hadoop oiv"
 
 # Glob to list fsimage files (or just a filename)
@@ -48,7 +50,7 @@ LOG=$today.log
     just_tmp=$(mktemp)
     grep '^/tmp' $delimited_tmp > $just_tmp
 
-    hdfs-tmpclean.py -b $HDFS_TMPCLEAN_BATCH_SIZE -m $HDFS_TMPCLEAN_MAX_FILES $just_tmp
+    hdfs-tmpclean.py -H "$HDFS_FS_COMMAND" -b $HDFS_TMPCLEAN_BATCH_SIZE -m $HDFS_TMPCLEAN_MAX_FILES $just_tmp
 
     rm -f $just_tmp $delimited_tmp
     echo "$program: Ending at $(date)"
