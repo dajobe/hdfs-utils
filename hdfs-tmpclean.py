@@ -110,7 +110,7 @@ class HadoopFsMetadata(object):
     def is_file(self):
         return self.htype == 'file'
 
-def tmp_clean(dryrun, hadoop, age, tmp, fsimage,
+def tmp_clean(dryrun, hdfs, age, tmp, fsimage,
               max_deletes=None, max_errors=5, batch_size=10):
     """Clean hadoop HDFS temp files over @age days below directory @tmp
     as found in HDFS image file fsimage.
@@ -122,6 +122,7 @@ def tmp_clean(dryrun, hadoop, age, tmp, fsimage,
     """
 
     ago = datetime.now() - timedelta(days=age)
+    hdfs = hdfs.split(' ')
 
     logger.info("Reading fsimage delimited file {name}".format(name=fsimage))
     deletions = 0
@@ -143,7 +144,7 @@ def tmp_clean(dryrun, hadoop, age, tmp, fsimage,
 
         batch.append(o.path)
         if len(batch) == batch_size:
-            cmd = [ hadoop, "fs", "-rm" ] + batch
+            cmd = hdfs + [ "-rm" ] + batch
             if dryrun:
                 logger.info("Would delete {n} HDFS batch files".format(n=len(batch)))
             else:
@@ -164,7 +165,7 @@ def tmp_clean(dryrun, hadoop, age, tmp, fsimage,
 
     # Final check for a pending batch
     if len(batch) > 0:
-        cmd = [ hadoop, "fs", "-rm" ] + batch
+        cmd = hdfs + [ "-rm" ] + batch
         if dryrun:
             logger.info("Would delete {n} HDFS batch files".format(n=len(batch)))
         else:
@@ -194,9 +195,9 @@ def main():
                         action = 'store_true',
                         default = False,
                         help = 'dryrun (default: False)')
-    parser.add_argument('-H', '--hadoop',
-                        default = 'hadoop',
-                        help = 'hadoop command (default hadoop)')
+    parser.add_argument('-H', '--hdfs',
+                        default = 'hdfs dfs',
+                        help = 'hadoop hdfs command (default "hdfs dfs")')
     parser.add_argument('-a', '--age',
                         type = int,
                         default = 7,
@@ -219,7 +220,7 @@ def main():
 
     debug = args.debug
     dryrun = args.dryrun
-    hadoop = args.hadoop
+    hdfs = args.hdfs
     age = args.age
     tmp = args.tmp
     max_files = args.max
@@ -235,7 +236,7 @@ def main():
     else:
         logging.basicConfig(level=logging.INFO)
 
-    tmp_clean(dryrun, hadoop, age, tmp, fsimages[0],
+    tmp_clean(dryrun, hdfs, age, tmp, fsimages[0],
               max_deletes = max_files,
               batch_size = batch_size)
 
