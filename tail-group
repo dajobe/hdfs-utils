@@ -1,0 +1,76 @@
+#!/usr/bin/python
+
+from os import listdir, execl
+from os.path import isfile, isdir, join
+import sys
+
+program = 'tail-all'
+
+TAIL_PATH = '/usr/bin/tail'
+
+ALL_LOG_GROUP='all'
+
+# HDP paths plus airflow
+LOG_GROUPS = {
+    'airflow': [ '/var/log/airflow/' ],
+    'ambari':  [ '/var/log/ambari-agent/',
+                 '/var/log/ambari-metrics-collector/',
+                 '/var/log/ambari-server/' ],
+    'hdfs':    [ '/var/log/hadoop-httpfs/',
+                 '/var/log/hadoop/hdfs/' ],
+    'hive':    [ '/var/log/hive/' ],
+    'kafka':   [ '/var/log/kafka/' ],
+    'mapred':  [ '/var/log/hadoop-mapreduce/' ],
+    'oozie':   [ '/var/log/oozie/' ],
+    'spark':   [ '/var/log/spark/' ],
+    'yarn':    [ '/var/log/hadoop-yarn/nodemanager/',
+                 '/var/log/hadoop-yarn/yarn/' ]
+    }
+
+if not (1 <= len(sys.argv) <= 2):
+    print "USAGE: {program} [log-group or '{all_str}']".format(program=program, all_str=ALL_LOG_GROUP)
+    sys.exit(1)
+
+groups=[]
+if len(sys.argv) == 1:
+    grp = 'all'
+    groups = LOG_GROUPS.keys()
+else: # length 2
+    grp = sys.argv[1]
+    if grp == 'help':
+        print "{program}: Known log groups are: {groups}".format(groups=' '.join(sorted(LOG_GROUPS.keys())), program=program)
+        sys.exit(0)
+    elif grp == ALL_LOG_GROUP:
+        groups = LOG_GROUPS.keys()
+    elif grp not in LOG_GROUPS:
+        print "{program}: Unknown log group '{grp}': use {program} help for the list".format(grp=grp, program=program)
+        sys.exit(1)
+    groups = [ grp ]
+
+
+
+log_files = []
+for grp in groups:
+    for dirname in LOG_GROUPS.get(grp):
+        if not isdir(dirname):
+            continue
+        for filename in listdir(dirname):
+            full_path = join(dirname, filename)
+            if isfile(full_path) and filename.endswith('.log'):
+                log_files.append(full_path)
+
+if not len(log_files):
+    print '{program}: No log files available for groups {groups}'.format(groups=' '.join(groups), program=program)
+    sys.exit(0)
+
+print "{program}: Watching log files: {files}".format(files=' '.join(log_files), program=program)
+
+# exec and end this program
+path = TAIL_PATH
+args = ['tail', '-F'] + log_files
+
+execl(path, *args)
+
+# should never be reached
+print "{program}: execl() failed".format(program=program)
+sys.exit(1)
